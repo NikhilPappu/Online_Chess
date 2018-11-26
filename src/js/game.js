@@ -21,9 +21,11 @@
         socket.on('exitlobby', function (msg) {
             removeUser(msg);
         });
-      
+
         socket.on('resign', function(msg) {
             if (msg.gameId == serverGame.id) {
+                if(playerColor == "white") alert('Result: 1-0\n' + 'You win!');
+                else if(playerColor == "black") alert('Result: 0-1\n' + 'You win!');
                 socket.emit('login', username);
 
                 $('#page-lobby').show();
@@ -45,6 +47,23 @@
                 game.move(msg.move);
                 board.position(game.fen());
             }
+        });
+
+        socket.on('checkmate', function(msg){
+            if (msg.gameId == serverGame.id) {
+                if(msg.color == 'white'){
+                    alert('Result: 1-0\n' + 'You lose!');
+                }
+                else if(msg.color == 'black'){
+                    alert('Result: 0-1\n' + 'You lose!');
+                }
+                socket.emit('login', username);
+
+                $('#page-lobby').show();
+                $('#page-game').hide();
+
+            }            
+
         });
 
         socket.on('logout', function (msg) {
@@ -72,8 +91,10 @@
         });
       
         $('#game-resign').on('click', function() {
+            if(playerColor == "white") alert('Result: 0-1\n' + 'You lose!');
+            else if(playerColor == "black") alert('Result: 1-0\n' + 'You lose!');
             socket.emit('resign', {userId: username, gameId: serverGame.id});
-        
+           
             socket.emit('login', username);
             $('#page-game').hide();
             $('#page-lobby').show();
@@ -153,11 +174,28 @@
         } else {
            socket.emit('move', {move: move, gameId: serverGame.id, board: game.fen()});
         }
-      
+        
+        //   // draw?
+        //   else if (game.in_draw() === true) {
+        //     console.log('draw');
+        //   }
+        
       };
 
       var onSnapEnd = function() {
         board.position(game.fen());
+        if (game.in_checkmate() === true){
+            if(playerColor == "white") alert('Result: 1-0\n' + 'You win!');
+            else if(playerColor == "black") alert('Result: 0-1\n' + 'You win!');
+
+            socket.emit('checkmate', {userId: username, gameId: serverGame.id, color: playerColor});
+
+            socket.emit('login', username);
+            $('#page-game').hide();
+            $('#page-lobby').show();
+            
+
+        }
       };
     });
 
