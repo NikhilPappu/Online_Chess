@@ -94,12 +94,12 @@ io.on('connection', function(socket) {
         currentGames[msg.gameId].board = msg.board;
     });
 
-    socket.on('checkmate', function(msg){
+    socket.on('game_end', function(msg){
         delete users[currentGames[msg.gameId].users.white].games[msg.gameId];
         delete users[currentGames[msg.gameId].users.black].games[msg.gameId];
         delete currentGames[msg.gameId];
 
-        socket.broadcast.emit('checkmate', msg);
+        socket.broadcast.emit('game_end', msg);
     });
     
     socket.on('resign', function(msg) {

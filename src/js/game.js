@@ -49,7 +49,8 @@
             }
         });
 
-        socket.on('checkmate', function(msg){
+        socket.on('game_end', function(msg){
+            if(msg.result == 1){
             if (msg.gameId == serverGame.id) {
                 if(msg.color == 'white'){
                     alert('Result: 1-0\n' + 'You lose!');
@@ -62,7 +63,19 @@
                 $('#page-lobby').show();
                 $('#page-game').hide();
 
-            }            
+            }  
+        }
+        else if(msg.result == 0){
+            if (msg.gameId == serverGame.id) {
+               
+                alert('Result: 1/2-1/2\n' + 'Game Drawn!');
+                socket.emit('login', username);
+
+                $('#page-lobby').show();
+                $('#page-game').hide();
+
+            }  
+        }          
 
         });
 
@@ -175,11 +188,6 @@
            socket.emit('move', {move: move, gameId: serverGame.id, board: game.fen()});
         }
         
-        //   // draw?
-        //   else if (game.in_draw() === true) {
-        //     console.log('draw');
-        //   }
-        
       };
 
       var onSnapEnd = function() {
@@ -188,14 +196,23 @@
             if(playerColor == "white") alert('Result: 1-0\n' + 'You win!');
             else if(playerColor == "black") alert('Result: 0-1\n' + 'You win!');
 
-            socket.emit('checkmate', {userId: username, gameId: serverGame.id, color: playerColor});
+            socket.emit('game_end', {userId: username, gameId: serverGame.id, color: playerColor, result: 1});
 
             socket.emit('login', username);
             $('#page-game').hide();
             $('#page-lobby').show();
-            
 
         }
+        else if (game.in_draw() === true) {
+            alert('Result: 1/2-1/2\n' + 'Game Drawn!');
+
+            socket.emit('game_end', {userId: username, gameId: serverGame.id, color: playerColor, result: 0});
+
+            socket.emit('login', username);
+            $('#page-game').hide();
+            $('#page-lobby').show();
+        }
+        
       };
     });
 
