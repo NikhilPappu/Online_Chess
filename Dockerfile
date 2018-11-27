@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 4000
 
-RUN npm start
+RUN node app.js
