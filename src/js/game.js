@@ -4,6 +4,8 @@
         var username, playerColor;
         var usersOnline = [];
         var myGames = [];
+        var myPreviousGames = [];
+
         socket = io();
       
         socket.on('login', function(msg) {
@@ -12,6 +14,10 @@
             
             myGames = msg.games;
             updateGamesList();
+        
+            myPreviousGames = msg.previousGames;
+            updatePreviousGames();
+            
         });
       
         socket.on('joinlobby', function (msg) {
@@ -50,7 +56,7 @@
         });
 
         socket.on('game_end', function(msg){
-            if(msg.result == 1){
+            if(msg.result !== "1/2-1/2"){
             if (msg.gameId == serverGame.id) {
                 if(msg.color == 'white'){
                     alert('Result: 1-0\n' + 'You lose!');
@@ -65,7 +71,7 @@
 
             }  
         }
-        else if(msg.result == 0){
+        else {
             if (msg.gameId == serverGame.id) {
                
                 alert('Result: 1/2-1/2\n' + 'Game Drawn!');
@@ -76,7 +82,9 @@
 
             }  
         }          
-
+        myPreviousGames = msg.previousGames;
+        updatePreviousGames();
+            
         });
 
         socket.on('logout', function (msg) {
@@ -104,9 +112,10 @@
         });
       
         $('#game-resign').on('click', function() {
-            if(playerColor == "white") alert('Result: 0-1\n' + 'You lose!');
-            else if(playerColor == "black") alert('Result: 1-0\n' + 'You lose!');
-            socket.emit('resign', {userId: username, gameId: serverGame.id});
+            let result;
+            if(playerColor == "white"){alert('Result: 0-1\n' + 'You lose!'); result = "0-1"}
+            else if(playerColor == "black"){alert('Result: 1-0\n' + 'You lose!'); result = "1-0";}
+            socket.emit('resign', {userId: username, gameId: serverGame.id, result: result, history: game.history()});
            
             socket.emit('login', username);
             $('#page-game').hide();
@@ -138,6 +147,11 @@
             });
         };
       
+      var updatePreviousGames = function(){
+        $('#previousGames').text(myPreviousGames[0]['history']);
+      };
+      
+
         var updateUserList = function() {
             document.getElementById('userList').innerHTML = '';
             usersOnline.forEach(function(user) {
@@ -191,12 +205,13 @@
       };
 
       var onSnapEnd = function() {
+        let result;
         board.position(game.fen());
         if (game.in_checkmate() === true){
-            if(playerColor == "white") alert('Result: 1-0\n' + 'You win!');
-            else if(playerColor == "black") alert('Result: 0-1\n' + 'You win!');
+            if(playerColor == "white"){alert('Result: 1-0\n' + 'You win!'); result = "1-0";}
+            else if(playerColor == "black"){alert('Result: 0-1\n' + 'You win!'); result = "0-1";}
 
-            socket.emit('game_end', {userId: username, gameId: serverGame.id, color: playerColor, result: 1});
+            socket.emit('game_end', {userId: username, gameId: serverGame.id, color: playerColor, result: result, history: game.history()});
 
             socket.emit('login', username);
             $('#page-game').hide();
@@ -206,7 +221,7 @@
         else if (game.in_draw() === true) {
             alert('Result: 1/2-1/2\n' + 'Game Drawn!');
 
-            socket.emit('game_end', {userId: username, gameId: serverGame.id, color: playerColor, result: 0});
+            socket.emit('game_end', {userId: username, gameId: serverGame.id, color: playerColor, result: "1/2-1/2", history: game.history()});
 
             socket.emit('login', username);
             $('#page-game').hide();

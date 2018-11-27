@@ -8,13 +8,27 @@ var port = process.env.PORT || 4000;
 var users = {};
 var lobbyUsers = {};
 var currentGames = {};
+var myPreviousGames = {};
+
+var MongoClient = require('mongodb').MongoClient;
+var url = "mongodb://localhost:27017/";
 
 app.get('/', function(req, res) {
     res.sendFile(__dirname + '/src/index.html');
 });
 
 io.on('connection', function(socket) {
-    
+        
+    // MongoClient.connect(url, function(err, db) {
+    //     if (err) throw err;
+    //     var dbo = db.db("mydb");
+    //     dbo.collection("games").drop(function(err, delOK) {
+    //       if (err) throw err;
+    //       if (delOK) console.log("Collection deleted");
+    //       db.close();
+    //     });
+    //   }); 
+
     socket.on('login', function(userId) {
         login(socket, userId);
     });
@@ -25,12 +39,25 @@ io.on('connection', function(socket) {
         if (!users[userId]) {    
             users[userId] = {userId: socket.userId, games:{}};
         }
+        MongoClient.connect(url, function(err, db) {
+            if (err) throw err;
+            var dbo = db.db("mydb");
+            var query = { $or: [{playerWhite: userId}, {playerBlack: userId}] };
+            dbo.collection("games").find(query).toArray(function(err, result) {
+              if (err) throw err;
+              //console.log(result);
+              myPreviousGames[userId] = result;
+              console.log(myPreviousGames[userId]);
+              db.close();
+            });
+          }); 
 
         socket.emit('login', {users: Object.keys(lobbyUsers), 
-                              games: Object.keys(users[userId].games)});
+                              games: Object.keys(users[userId].games), previousGames: myPreviousGames[userId]});
         lobbyUsers[userId] = socket;
         
         socket.broadcast.emit('joinlobby', socket.userId);
+    
     }
     
     socket.on('challenge', function(opponentId) {        
@@ -95,6 +122,24 @@ io.on('connection', function(socket) {
     });
 
     socket.on('game_end', function(msg){
+        currentGame = currentGames[msg.gameId];
+        MongoClient.connect(url, function(err, db) {
+        if (err) throw err;
+        var dbo = db.db("mydb");
+        if (currentGame){
+        var myobj = {playerWhite: currentGame.users.white,
+                     playerBlack: currentGame.users.black,
+                     history: msg.history,
+                     result: msg.result};
+    
+        dbo.collection("games").insertOne(myobj, function(err, res) {
+            if (err) throw err;
+            console.log("1 document inserted");
+            db.close();
+        });
+    }
+        });
+
         delete users[currentGames[msg.gameId].users.white].games[msg.gameId];
         delete users[currentGames[msg.gameId].users.black].games[msg.gameId];
         delete currentGames[msg.gameId];
@@ -103,6 +148,25 @@ io.on('connection', function(socket) {
     });
     
     socket.on('resign', function(msg) {
+
+        currentGame = currentGames[msg.gameId];
+        MongoClient.connect(url, function(err, db) {
+        if (err) throw err;
+        var dbo = db.db("mydb");
+        if (currentGame){
+        var myobj = {playerWhite: currentGame.users.white,
+                     playerBlack: currentGame.users.black,
+                     history: msg.history,
+                     result: msg.result};
+    
+        dbo.collection("games").insertOne(myobj, function(err, res) {
+            if (err) throw err;
+            console.log("1 document inserted");
+            db.close();
+        });
+    }
+        });
+
         delete users[currentGames[msg.gameId].users.white].games[msg.gameId];
         delete users[currentGames[msg.gameId].users.black].games[msg.gameId];
         delete currentGames[msg.gameId];
