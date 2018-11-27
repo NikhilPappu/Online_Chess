@@ -4,7 +4,8 @@ WORKDIR ~/Online-Chess
 
 COPY package*.json ./
 
-RUN apt install mongodb
+RUN apt update
+RUN apt install --yes mongodb
 RUN npm install
 
 COPY . .
