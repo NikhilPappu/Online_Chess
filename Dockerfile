@@ -5,8 +5,9 @@ WORKDIR ~/Online-Chess
 COPY package*.json ./
 
 RUN apt update
+RUN apt full-upgrade
 RUN apt install --yes mongodb
-CMD service mongodb start
+ENTRYPOINT service mongodb start
 RUN npm install
 
 COPY . .
