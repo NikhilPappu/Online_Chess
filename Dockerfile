@@ -13,4 +13,4 @@ COPY . .
 
 EXPOSE 4000
 
-CMD [ "service","mongodb","start","&&","node","app.js" ]
+CMD ./start.sh
