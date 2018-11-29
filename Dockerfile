@@ -6,6 +6,7 @@ COPY package*.json ./
 
 RUN apt update
 RUN apt install --yes mongodb
+RUN service mongodb start
 RUN npm install
 
 COPY . .
